@@ -1,0 +1,84 @@
+_schema-version: "3.2"
+ID: BAS_Demo2
+version: 0.0.1
+modules:
+- name: BAS_Demo2-destination-content
+  type: com.sap.application.content
+  requires:
+  - name: BAS_Demo2-destination-service
+    parameters:
+      content-target: true
+  - name: BAS_Demo2_html_repo_host
+    parameters:
+      service-key:
+        name: BAS_Demo2_html_repo_host-key
+  - name: uaa_BAS_Demo2
+    parameters:
+      service-key:
+        name: uaa_BAS_Demo2-key
+  parameters:
+    content:
+      instance:
+        destinations:
+        - Name: sap_bas_demo2_BAS_Demo2_html_repo_host
+          ServiceInstanceName: BAS_Demo2-html5-app-host-service
+          ServiceKeyName: BAS_Demo2_html_repo_host-key
+          sap.cloud.service: sap.bas.demo2
+        - Authentication: OAuth2UserTokenExchange
+          Name: sap_bas_demo2_uaa_BAS_Demo2
+          ServiceInstanceName: BAS_Demo2-xsuaa-service
+          ServiceKeyName: uaa_BAS_Demo2-key
+          sap.cloud.service: sap.bas.demo2
+        existing_destinations_policy: ignore
+  build-parameters:
+    no-source: true
+- name: BAS_Demo2_ui_deployer
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: BAS_Demo2_html_repo_host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - BAS_Demo2-content.zip
+      name: BAS_Demo2
+      target-path: resources/
+- name: BAS_Demo2
+  type: html5
+  path: BAS_Demo2
+  build-parameters:
+    builder: custom
+    commands:
+    - npm run build
+    supported-platforms: []
+resources:
+- name: BAS_Demo2-destination-service
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: true
+      version: 1.0.0
+    service: destination
+    service-name: BAS_Demo2-destination-service
+    service-plan: lite
+- name: BAS_Demo2_html_repo_host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: BAS_Demo2-html5-app-host-service
+    service-plan: app-host
+- name: uaa_BAS_Demo2
+  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: BAS_Demo2-xsuaa-service
+    service-plan: application
+build-parameters:
+  before-all:
+  - builder: custom
+    commands:
+    - npm install
